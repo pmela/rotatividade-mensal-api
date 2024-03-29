@@ -24,6 +24,12 @@ class AnexoViewSet(viewsets.ModelViewSet):
     serializer_class = AnexoSerializer
     permission_classes = []
 
+    def get_queryset(self):
+        anexos_filtragem = Anexo.objects.all().order_by('-data')
+        if self.request.query_params.get('nome') is not None:
+            anexos_filtragem = anexos_filtragem.filter(nome__icontains=self.request.query_params.get('nome'))
+        return anexos_filtragem
+
 
 @api_view(['POST'])
 def analise(request):
@@ -42,18 +48,18 @@ def analise(request):
     quantidade_cancelados = len(planilha_cancelamentos)
 
     grafico = [
-        {'mes': 'Janeiro', 'cancelados': 0, 'novos': 0, 'percentual': 0},
-        {'mes': 'Fevereiro', 'cancelados': 0, 'novos': 0, 'percentual': 0},
-        {'mes': 'Março', 'cancelados': 0, 'novos': 0, 'percentual': 0},
-        {'mes': 'Abril', 'cancelados': 0, 'novos': 0, 'percentual': 0},
-        {'mes': 'Maio', 'cancelados': 0, 'novos': 0, 'percentual': 0},
-        {'mes': 'Junho', 'cancelados': 0, 'novos': 0, 'percentual': 0},
-        {'mes': 'Julho', 'cancelados': 0, 'novos': 0, 'percentual': 0},
-        {'mes': 'Agosto', 'cancelados': 0, 'novos': 0, 'percentual': 0},
-        {'mes': 'Setembro', 'cancelados': 0, 'novos': 0, 'percentual': 0},
-        {'mes': 'Outubro', 'cancelados': 0, 'novos': 0, 'percentual': 0},
-        {'mes': 'Novembro', 'cancelados': 0, 'novos': 0, 'percentual': 0},
-        {'mes': 'Dezembro', 'cancelados': 0, 'novos': 0, 'percentual': 0}
+        {'mes': 'Janeiro', 'cancelados': 0, 'novos': 0, 'percentual': 0, 'valor': 0},
+        {'mes': 'Fevereiro', 'cancelados': 0, 'novos': 0, 'percentual': 0, 'valor': 0},
+        {'mes': 'Março', 'cancelados': 0, 'novos': 0, 'percentual': 0, 'valor': 0},
+        {'mes': 'Abril', 'cancelados': 0, 'novos': 0, 'percentual': 0, 'valor': 0},
+        {'mes': 'Maio', 'cancelados': 0, 'novos': 0, 'percentual': 0, 'valor': 0},
+        {'mes': 'Junho', 'cancelados': 0, 'novos': 0, 'percentual': 0, 'valor': 0},
+        {'mes': 'Julho', 'cancelados': 0, 'novos': 0, 'percentual': 0, 'valor': 0},
+        {'mes': 'Agosto', 'cancelados': 0, 'novos': 0, 'percentual': 0, 'valor': 0},
+        {'mes': 'Setembro', 'cancelados': 0, 'novos': 0, 'percentual': 0, 'valor': 0},
+        {'mes': 'Outubro', 'cancelados': 0, 'novos': 0, 'percentual': 0, 'valor': 0},
+        {'mes': 'Novembro', 'cancelados': 0, 'novos': 0, 'percentual': 0, 'valor': 0},
+        {'mes': 'Dezembro', 'cancelados': 0, 'novos': 0, 'percentual': 0, 'valor': 0}
     ]
 
     for linha in df.values:
@@ -69,9 +75,21 @@ def analise(request):
             else:
                 data_cancelamento = linha[5]
             grafico[data_cancelamento.month - 1]['cancelados'] += 1
+            cobranca = int(linha[1])
+            valor = linha[6] if type(linha[6]) == float else float(linha[6].replace(',', '.'))
+            if cobranca == 365 or cobranca == 360:
+                grafico[data_cancelamento.month - 1]['valor'] += (valor/12)
+
+            if cobranca == 730:
+                grafico[data_cancelamento.month - 1]['valor'] += (valor / 24)
+
+            if cobranca==30:
+                grafico[data_cancelamento.month - 1]['valor'] += valor
+
+
 
     for linha_grafico in grafico:
-        if linha_grafico['cancelados'] is not 0:
+        if linha_grafico['cancelados'] != 0:
             linha_grafico['percentual'] = linha_grafico['cancelados'] / linha_grafico['novos'] * 100
 
     mes_mais_cancelado = {'mes': '', 'cancelados': 0, 'novos': 0, 'percentual': 0}
@@ -83,7 +101,6 @@ def analise(request):
     for x in grafico:
         if mes_menos_cancelado.get('cancelados') > x.get('cancelados'):
             mes_menos_cancelado = x
-
 
     ativa_boolean = df['status'] == 'Ativa'
     planilha_ativa = df[ativa_boolean]
@@ -102,7 +119,6 @@ def analise(request):
 
         if data_convertida < antigo_ativo_convertida:
             antigo_ativo = linha
-
 
     atrasada = df['status'] == 'Atrasada'
     planilha_atrasada = df[atrasada]
