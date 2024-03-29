@@ -12,4 +12,4 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
 class AnexoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Anexo
-        fields = ['nome', 'data','arquivo']
+        fields = ['id','nome', 'data','arquivo']

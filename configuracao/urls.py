@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework import routers
-from api.views import UserViewSet, AnexoViewSet, planilha
+from api.views import UserViewSet, AnexoViewSet, analise
 from django.conf.urls.static import static
 
 from configuracao import settings
@@ -15,6 +15,6 @@ urlpatterns = [
     path('', include(router.urls)),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 
-    path('planilha/', planilha)
+    path('analise/', analise)
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
